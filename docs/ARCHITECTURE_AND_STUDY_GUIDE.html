@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sectoolkit - Architecture & Study Guide</title>
+    <style>
+        :root {
+            --bg-canvas: #0d1117;
+            --bg-surface: #161b22;
+            --bg-subtle: #21262d;
+            --border-default: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent-blue: #58a6ff;
+            --accent-cyan: #39c5cf;
+            --code-text: #ff7b72;
+            --code-bg: #1f242c;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.68;
+            color: var(--text-primary);
+            background-color: var(--bg-canvas);
+            margin: 0;
+            padding: 24px;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background: var(--bg-surface);
+            padding: 40px;
+            border-radius: 10px;
+            border: 1px solid var(--border-default);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+        h1, h2, h3, h4 {
+            color: var(--accent-blue);
+            border-bottom: 1px solid var(--border-default);
+            padding-bottom: 0.3em;
+        }
+        h3 {
+            color: var(--accent-cyan);
+        }
+        pre {
+            background-color: var(--bg-canvas);
+            border: 1px solid var(--border-default);
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+            font-size: 14px;
+            color: #f0f6fc;
+        }
+        code {
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-size: 85%;
+            border: 1px solid rgba(240, 246, 252, 0.1);
+        }
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            border: none;
+            padding: 0;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid var(--border-default);
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: var(--bg-subtle);
+            color: #f0f6fc;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #1a202c;
+        }
+        tr:nth-child(odd) {
+            background-color: var(--bg-surface);
+        }
+        blockquote {
+            border-left: 4px solid var(--accent-blue);
+            background-color: var(--bg-subtle);
+            margin: 0;
+            padding: 8px 16px;
+            color: var(--text-secondary);
+            border-radius: 0 6px 6px 0;
+        }
+        .mermaid {
+            text-align: center;
+            margin: 20px 0;
+            background: #0d1117;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid var(--border-default);
+        }
+    </style>
+    <script type="module">
+        import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1><code>sectoolkit</code>: Security Engineering &amp; SOC Automation Architecture Guide</h1>
+<hr />
+<h2>1. Executive Summary &amp; Philosophy</h2>
+<p>The <strong>Security Toolkit (<code>sectoolkit</code>)</strong> is a modular, production-grade Python engineering framework built following defensive programming principles from <em>Python Scripting for Cybersecurity Professionals</em>.</p>
+<h3>Why Python for Security Operations?</h3>
+<p>Security teams operate in heterogeneous environments where telemetry originates from diverse sources (firewalls, endpoint sensors, network taps, SIEMs, cloud APIs). Python serves as the universal "glue language" of security engineering. However, hastily written scripts often introduce serious vulnerabilities:
+- Hardcoded credentials and leaked tokens.
+- Command and SQL injection in automation pipelines.
+- Memory crashes when reading gigabyte-scale log files.
+- Alert fatigue due to lack of deduplication and transparent prioritization.</p>
+<h3>Core Defensive Principles Applied</h3>
+<ol>
+<li><strong>Validate at the Boundaries</strong>: Enforce strict validation (types, ranges, formats) the moment untrusted data enters the application before processing.</li>
+<li><strong>Defensive by Default</strong>: Reject <code>shell=True</code>, avoid string-concatenated SQL queries, and enforce canonical path containment.</li>
+<li><strong>Memory-Conscious Architecture</strong>: Utilize Python generators and iterators (<code>yield</code>) to stream data line-by-line rather than reading entire datasets into RAM.</li>
+<li><strong>Explainable Prioritization</strong>: Provide transparent mathematical formulas for risk scoring instead of opaque "black-box" heuristics.</li>
+<li><strong>Auditable Artifacts</strong>: Maintain cryptographic integrity (SHA-256) and strict ISO 8601 UTC timestamp normalization.</li>
+</ol>
+<hr />
+<h2>2. End-to-End System Architecture</h2>
+<div class="codehilite"><pre><span></span><code><span class="n">flowchart</span><span class="w"> </span><span class="n">TD</span>
+<span class="w">    </span><span class="n">subgraph</span><span class="w"> </span><span class="n">Ingestion</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;Ingestion &amp; Boundary Defense&quot;</span><span class="p">]</span>
+<span class="w">        </span><span class="n">A</span><span class="p">[</span><span class="n">Raw</span><span class="w"> </span><span class="n">Input</span><span class="o">:</span><span class="w"> </span><span class="n">Logs</span><span class="p">,</span><span class="w"> </span><span class="n">Feeds</span><span class="p">,</span><span class="w"> </span><span class="n">SIEM</span><span class="p">,</span><span class="w"> </span><span class="n">CLI</span><span class="p">]</span><span class="w"> </span><span class="o">--&gt;</span><span class="w"> </span><span class="n">B</span><span class="p">[</span><span class="n">validators</span><span class="p">.</span><span class="n">py</span><span class="o">:</span><span class="w"> </span><span class="n">Range</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">Type</span><span class="w"> </span><span class="n">Check</span><span class="p">]</span>
+<span class="w">        </span><span class="n">A</span><span class="w"> </span><span class="o">--&gt;</span><span class="w"> </span><span class="n">C</span><span class="p">[</span><span class="n">security</span><span class="p">.</span><span class="n">py</span><span class="o">:</span><span class="w"> </span><span class="n">Path</span><span class="w"> </span><span class="n">Containment</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">Secret</span><span class="w"> </span><span class="n">Redaction</span><span class="p">]</span>
+<span class="w">        </span><span class="n">A</span><span class="w"> </span><span class="o">--&gt;</span><span class="w"> </span><span class="n">D</span><span class="p">[</span><span class="n">log_stream</span><span class="p">.</span><span class="n">py</span><span class="o">:</span><span class="w"> </span><span class="n">Memory</span><span class="o">-</span><span class="n">Safe</span><span class="w"> </span><span class="n">Generators</span><span class="p">]</span>
+<span class="w">    </span><span class="n">end</span>
+
+<span class="w">    </span><span class="n">subgraph</span><span class="w"> </span><span class="n">Processing</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;Processing &amp; Security Intelligence&quot;</span><span class="p">]</span>
+<span class="w">        </span><span class="n">D</span><span class="w"> </span><span class="o">--&gt;</span><span class="w"> </span><span class="n">E</span><span class="p">[</span><span class="n">ioc</span><span class="p">.</span><span class="n">py</span><span class="o">:</span><span class="w"> </span><span class="n">Extract</span><span class="p">,</span><span class="w"> </span><span class="n">Defang</span><span class="p">,</span><span class="w"> </span><span class="n">Hash</span><span class="p">]</span>
+<span class="w">        </span><span class="n">D</span><span class="w"> </span><span class="o">--&gt;</span><span class="w"> </span><span class="n">F</span><span class="p">[</span><span class="n">net_audit</span><span class="p">.</span><span class="n">py</span><span class="o">:</span><span class="w"> </span><span class="n">Suricata</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">Top</span><span class="w"> </span><span class="n">Talkers</span><span class="p">]</span>
+<span class="w">        </span><span class="n">E</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">F</span><span class="w"> </span><span class="o">--&gt;</span><span class="w"> </span><span class="n">G</span><span class="p">[</span><span class="n">triage</span><span class="p">.</span><span class="n">py</span><span class="o">:</span><span class="w"> </span><span class="n">Normalize</span><span class="p">,</span><span class="w"> </span><span class="n">Fingerprint</span><span class="p">,</span><span class="w"> </span><span class="n">Score</span><span class="p">]</span>
+<span class="w">    </span><span class="n">end</span>
+
+<span class="w">    </span><span class="n">subgraph</span><span class="w"> </span><span class="n">StorageAndExecution</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;Storage, Execution &amp; CLI&quot;</span><span class="p">]</span>
+<span class="w">        </span><span class="n">G</span><span class="w"> </span><span class="o">--&gt;</span><span class="w"> </span><span class="n">H</span><span class="p">[(</span><span class="n">storage</span><span class="p">.</span><span class="n">py</span><span class="o">:</span><span class="w"> </span><span class="n">Parameterized</span><span class="w"> </span><span class="n">SQLite</span><span class="w"> </span><span class="n">Store</span><span class="p">)]</span>
+<span class="w">        </span><span class="n">G</span><span class="w"> </span><span class="o">--&gt;</span><span class="w"> </span><span class="n">I</span><span class="p">[</span><span class="n">forensics</span><span class="p">.</span><span class="n">py</span><span class="o">:</span><span class="w"> </span><span class="n">Evidence</span><span class="w"> </span><span class="n">Manifest</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">Safe</span><span class="w"> </span><span class="n">Exec</span><span class="p">]</span>
+<span class="w">        </span><span class="n">H</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">--&gt;</span><span class="w"> </span><span class="n">J</span><span class="p">[</span><span class="n">cli</span><span class="p">.</span><span class="n">py</span><span class="o">:</span><span class="w"> </span><span class="n">Central</span><span class="w"> </span><span class="n">Unified</span><span class="w"> </span><span class="n">CLI</span><span class="p">]</span>
+<span class="w">    </span><span class="n">end</span>
+</code></pre></div>
+
+<hr />
+<h2>3. Module-by-Module Breakdown</h2>
+<div class="codehilite"><pre><span></span><code><span class="n">src</span><span class="o">/</span><span class="n">sectoolkit</span><span class="o">/</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">validators</span><span class="o">.</span><span class="n">py</span><span class="w">   </span><span class="c1"># Module 1: Input boundary validators</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">security</span><span class="o">.</span><span class="n">py</span><span class="w">     </span><span class="c1"># Module 2: Path containment &amp; secret redaction</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">ioc</span><span class="o">.</span><span class="n">py</span><span class="w">          </span><span class="c1"># Module 3: Threat intelligence &amp; indicator extraction</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">triage</span><span class="o">.</span><span class="n">py</span><span class="w">       </span><span class="c1"># Module 4: SOC triage, deduplication &amp; scoring</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">log_stream</span><span class="o">.</span><span class="n">py</span><span class="w">   </span><span class="c1"># Module 5: Memory-safe log streaming &amp; batching</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">net_audit</span><span class="o">.</span><span class="n">py</span><span class="w">    </span><span class="c1"># Module 6: Network telemetry &amp; Suricata inspection</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">forensics</span><span class="o">.</span><span class="n">py</span><span class="w">    </span><span class="c1"># Module 7: Evidence manifests, timelines &amp; safe exec</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">storage</span><span class="o">.</span><span class="n">py</span><span class="w">      </span><span class="c1"># Module 8: Parameterized SQLite &amp; worker pools</span>
+<span class="err">└──</span><span class="w"> </span><span class="n">cli</span><span class="o">.</span><span class="n">py</span><span class="w">          </span><span class="c1"># Module 9: Central CLI entry point</span>
+</code></pre></div>
+
+<hr />
+<h3>Module 1: Boundary Validators &amp; Normalization</h3>
+<ul>
+<li><strong>File:</strong> <a href="file:///home/badguy/security-scripts/src/sectoolkit/validators.py"><code>validators.py</code></a></li>
+<li><strong>Test Suite:</strong> <a href="file:///home/badguy/security-scripts/tests/test_validators.py"><code>test_validators.py</code></a> (7 tests)</li>
+</ul>
+<h4>Why We Need It</h4>
+<p>Security tools consume untrusted network inputs (command-line flags, HTTP headers, syslog lines). If a script accepts an unvalidated port or username, downstream systems can crash, suffer injection attacks, or yield false positive matches.</p>
+<h4>Core Functions</h4>
+<ol>
+<li><code>parse_port(value: str | int) -&gt; int</code>:</li>
+<li>Enforces that network ports are valid integers in range $[1, 65535]$.</li>
+<li>Handles type casting gracefully; raises descriptive <code>ValueError</code> on non-numeric strings or out-of-range values.</li>
+<li><code>normalize_username(value: str) -&gt; str</code>:</li>
+<li>Trims whitespace and applies <code>casefold()</code>.</li>
+<li><em>Why <code>casefold()</code> over <code>lower()</code>?</em> In international character sets (e.g. German <code>ß</code> $\rightarrow$ <code>ss</code>), <code>casefold()</code> handles aggressive caseless matching, eliminating identity spoofing through unicode trickery.</li>
+<li><code>is_private_ip(ip_text: str) -&gt; bool</code>:</li>
+<li>Uses the standard library <code>ipaddress</code> module to evaluate IPv4/IPv6 address strings.</li>
+<li>Accurately identifies RFC 1918 private ranges, loopback (<code>127.0.0.0/8</code>), and link-local ranges.</li>
+</ol>
+<hr />
+<h3>Module 2: Path Traversal &amp; Secret Redaction</h3>
+<ul>
+<li><strong>File:</strong> <a href="file:///home/badguy/security-scripts/src/sectoolkit/security.py"><code>security.py</code></a></li>
+<li><strong>Test Suite:</strong> <a href="file:///home/badguy/security-scripts/tests/test_security.py"><code>test_security.py</code></a> (5 tests)</li>
+</ul>
+<h4>Why We Need It</h4>
+<ul>
+<li><strong>Directory Traversal</strong>: When analysts supply output paths or filenames, an uncontained path (e.g., <code>../../etc/shadow</code>) could allow attackers or faulty scripts to overwrite system files.</li>
+<li><strong>Credential Leakage</strong>: Logs and diagnostic outputs frequently contain passwords, bearer tokens, and session cookies. Logging these creates severe compliance violations.</li>
+</ul>
+<h4>Core Functions</h4>
+<ol>
+<li><code>safe_child(root: Path, user_supplied: str) -&gt; Path</code>:</li>
+<li>Resolves absolute canonical paths (<code>.resolve()</code>) for both the boundary root and candidate target.</li>
+<li>Validates that <code>resolved_root in candidate.parents</code> or <code>candidate == resolved_root</code>.</li>
+<li>Prevents directory traversal attacks (<code>../</code>, symlink attacks) with an explicit <code>ValueError</code>.</li>
+<li><code>redact_secrets(data: Any, sensitive_keys: set[str] | None = None) -&gt; Any</code>:</li>
+<li>Recursively traverses nested dictionaries, lists, and tuples.</li>
+<li>Detects keys such as <code>password</code>, <code>token</code>, <code>authorization</code>, <code>api_key</code>, <code>secret</code>, and <code>cookie</code>.</li>
+<li>Replaces values with <code>[REDACTED]</code> while leaving operational metadata intact.</li>
+</ol>
+<hr />
+<h3>Module 3: Threat Intelligence &amp; IOC Processing</h3>
+<ul>
+<li><strong>File:</strong> <a href="file:///home/badguy/security-scripts/src/sectoolkit/ioc.py"><code>ioc.py</code></a></li>
+<li><strong>Test Suite:</strong> <a href="file:///home/badguy/security-scripts/tests/test_ioc.py"><code>test_ioc.py</code></a> (4 tests)</li>
+</ul>
+<h4>Why We Need It</h4>
+<p>Threat intelligence workflows require extracting indicators of compromise (IOCs) from unstructured reports, defanging them to prevent accidental analyst clicks, and calculating file hashes.</p>
+<h4>Core Functions</h4>
+<ol>
+<li><code>sha256_file(path: Path | str, chunk_size: int = 1MB) -&gt; str</code>:</li>
+<li>Reads files in 1 MB chunks to calculate cryptographic digests without loading multi-gigabyte malware samples into RAM.</li>
+<li><code>extract_iocs(text: str) -&gt; dict[str, list[str]]</code>:</li>
+<li>Uses regular expressions to extract candidate IPv4 addresses, SHA-256 hashes (64 hex characters), and MD5 hashes (32 hex characters).</li>
+<li>Validates IP addresses with <code>ipaddress.IPv4Address</code> to reject invalid octets (e.g. <code>999.999.999.999</code>).</li>
+<li>Normalizes hashes to lowercase and deduplicates into sorted lists.</li>
+<li><code>defang_indicator(indicator: str) -&gt; str</code>:</li>
+<li>Neutralizes live URLs and IPs for safe sharing: converts <code>http://</code> / <code>https://</code> into <code>hxxp://</code> / <code>hxxps://</code> and replaces dots <code>.</code> with <code>[.]</code>.</li>
+</ol>
+<hr />
+<h3>Module 4: SOC Triage &amp; Alert Normalization</h3>
+<ul>
+<li><strong>File:</strong> <a href="file:///home/badguy/security-scripts/src/sectoolkit/triage.py"><code>triage.py</code></a></li>
+<li><strong>Test Suite:</strong> <a href="file:///home/badguy/security-scripts/tests/test_triage.py"><code>test_triage.py</code></a> (8 tests)</li>
+</ul>
+<h4>Why We Need It</h4>
+<p>SOC analysts are overwhelmed by alert volume. Different SIEMs use conflicting schemas, and brute-force or port scans generate thousands of redundant events.</p>
+<h4>Core Functions</h4>
+<ol>
+<li><code>normalize_alert(raw: Mapping) -&gt; dict</code>:</li>
+<li>Translates vendor-specific fields (<code>@timestamp</code>, <code>time</code>, <code>src_ip</code>, <code>rule_name</code>, <code>signature</code>) into a predictable dictionary schema.</li>
+<li><code>fingerprint(alert: Mapping) -&gt; str</code>:</li>
+<li>Generates a deterministic SHA-256 hash using sorted JSON keys:<ul>
+<li><code>rule</code>: Alert signature or detection logic.</li>
+<li><code>host</code>: Target host.</li>
+<li><code>src</code>: Attacking source IP.</li>
+<li><code>time_bucket</code>: Timestamp truncated to minute precision (<code>YYYY-MM-DDTHH:MM</code>).</li>
+</ul>
+</li>
+<li>Alerts with the same signature, attacker, and target within the same minute share an identical fingerprint.</li>
+<li><code>priority_score(severity, confidence, asset_criticality) -&gt; float</code>:</li>
+<li>Computes transparent risk prioritization:
+     $$\text{Score} = (\text{Severity} \times 0.45) + (\text{Confidence} \times 0.30) + (\text{Criticality} \times 0.25)$$</li>
+<li>Severity weights: Low=1, Medium=2, High=3, Critical=4. Ratings range from 1.0 to 4.0.</li>
+<li><code>triage_alerts(raw_alerts, ...) -&gt; list[dict]</code>:</li>
+<li>Ingests alerts, normalizes fields, aggregates duplicates by fingerprint (incrementing <code>count</code>), computes priority scores, filters below <code>min_priority</code>, and returns alerts sorted descending by urgency.</li>
+</ol>
+<hr />
+<h3>Module 5: Large Datasets &amp; Log Streaming</h3>
+<ul>
+<li><strong>File:</strong> <a href="file:///home/badguy/security-scripts/src/sectoolkit/log_stream.py"><code>log_stream.py</code></a></li>
+<li><strong>Test Suite:</strong> <a href="file:///home/badguy/security-scripts/tests/test_log_stream.py"><code>test_log_stream.py</code></a> (6 tests)</li>
+</ul>
+<h4>Why We Need It</h4>
+<p>Enterprise firewall and web proxy logs range from 10 GB to several terabytes. Reading a 5 GB log file with <code>handle.read()</code> or <code>handle.readlines()</code> exhausts server memory and crashes the process.</p>
+<h4>Core Functions</h4>
+<ol>
+<li><code>stream_lines(path, needle=None, encoding="utf-8") -&gt; Iterator[tuple[int, str]]</code>:</li>
+<li>Opens files with <code>errors="replace"</code> to handle corrupted byte sequences gracefully.</li>
+<li>Yields <code>(line_number, line_content)</code> one line at a time via a Python generator, maintaining an $O(1)$ memory footprint.</li>
+<li><code>stream_json_lines(path) -&gt; Iterator[tuple[int, dict]]</code>:</li>
+<li>Streams JSON Lines / NDJSON logs (common in modern SIEM and EDR exports).</li>
+<li>Skips malformed lines safely without aborting the pipeline.</li>
+<li><code>batch_stream(items, batch_size=100) -&gt; Iterator[list]</code>:</li>
+<li>Chunks streaming items into bounded batches, enabling bulk database insertions or paginated API requests.</li>
+</ol>
+<hr />
+<h3>Module 6: Network &amp; Web Telemetry</h3>
+<ul>
+<li><strong>File:</strong> <a href="file:///home/badguy/security-scripts/src/sectoolkit/net_audit.py"><code>net_audit.py</code></a></li>
+<li><strong>Test Suite:</strong> <a href="file:///home/badguy/security-scripts/tests/test_net_audit.py"><code>test_net_audit.py</code></a> (5 tests)</li>
+</ul>
+<h4>Why We Need It</h4>
+<p>Security operations require active verification of authorized endpoints, subnet calculations, and parsing network intrusion detection telemetry (Suricata <code>eve.json</code> / Zeek <code>conn.log</code>).</p>
+<h4>Core Functions</h4>
+<ol>
+<li><code>check_tcp(host: str, port: int, timeout: float = 2.0) -&gt; bool</code>:</li>
+<li>Audits TCP service availability with socket timeouts to prevent indefinite hanging.</li>
+<li>Validates port numbers using Module 1's <code>parse_port</code>.</li>
+<li><code>subnet_hosts(cidr: str) -&gt; list[str]</code>:</li>
+<li>Parses CIDR subnets (e.g. <code>192.168.1.0/29</code>) using <code>ipaddress.ip_network(strict=False)</code> and extracts all usable host IP addresses.</li>
+<li><code>parse_suricata_eve(path, event_type="alert") -&gt; Iterator[dict]</code>:</li>
+<li>Connects to Module 5's <code>stream_json_lines</code> to filter Suricata network events on the fly.</li>
+<li><code>summarize_top_talkers(events, key="src_ip", limit=10) -&gt; list[tuple[str, int]]</code>:</li>
+<li>Aggregates event volume by key (source IP, destination port, username) using <code>collections.Counter</code> to surface anomalies and brute-force sources.</li>
+</ol>
+<hr />
+<h3>Module 7: Digital Forensics &amp; Safe Execution</h3>
+<ul>
+<li><strong>File:</strong> <a href="file:///home/badguy/security-scripts/src/sectoolkit/forensics.py"><code>forensics.py</code></a></li>
+<li><strong>Test Suite:</strong> <a href="file:///home/badguy/security-scripts/tests/test_forensics.py"><code>test_forensics.py</code></a> (5 tests)</li>
+</ul>
+<h4>Why We Need It</h4>
+<p>Forensic integrity demands defensible evidence collection. Evidence must be hashed deterministically, timestamps must be unambiguous, and external tools must be invoked without command injection vulnerabilities.</p>
+<h4>Core Functions</h4>
+<ol>
+<li><code>generate_manifest(directory: Path | str) -&gt; list[dict]</code>:</li>
+<li>Recursively traverses an evidence directory in deterministic alphabetical order.</li>
+<li>Generates an immutable manifest capturing relative path, file size in bytes, SHA-256 digest, and collection timestamp in UTC.</li>
+<li><code>verify_manifest(manifest, directory) -&gt; dict[str, list[str]]</code>:</li>
+<li>Compares current files against the original manifest.</li>
+<li>Categorizes findings into <code>matched</code> (intact), <code>modified</code> (tampered/corrupted), and <code>missing</code> (deleted).</li>
+<li><code>parse_iso_timestamp(value: str) -&gt; datetime</code>:</li>
+<li>Parses ISO 8601 strings and normalizes them to UTC.</li>
+<li>Rejects timezone-naive timestamps to prevent correlation errors across disparate sensor clocks.</li>
+<li><code>safe_exec(cmd_args: list[str], timeout: float = 10.0) -&gt; tuple[int, str, str]</code>:</li>
+<li>Executes external system utilities (e.g., <code>tshark</code>, <code>nmap</code>) safely using <code>subprocess.run(shell=False)</code> with a list of arguments.</li>
+<li>Prevents command injection attacks (e.g. <code>; rm -rf /</code> or <code>$(whoami)</code>).</li>
+</ol>
+<hr />
+<h3>Module 8: Parameterized SQLite &amp; Concurrency</h3>
+<ul>
+<li><strong>File:</strong> <a href="file:///home/badguy/security-scripts/src/sectoolkit/storage.py"><code>storage.py</code></a></li>
+<li><strong>Test Suite:</strong> <a href="file:///home/badguy/security-scripts/tests/test_storage.py"><code>test_storage.py</code></a> (4 tests)</li>
+</ul>
+<h4>Why We Need It</h4>
+<p>Security scripts often require persistent local evidence storage and high-throughput network tasks. String concatenation in SQL statements leads directly to SQL Injection (SQLi), while unconstrained concurrency can trigger denial-of-service on target services.</p>
+<h4>Core Components</h4>
+<ol>
+<li><code>EvidenceStore</code> Class:</li>
+<li>Encapsulates a local SQLite database with <code>sqlite3.Row</code> factory for named column access.</li>
+<li><strong>Strict Parameterization</strong>: Queries use <code>?</code> placeholders (e.g. <code>VALUES (?, ?, ?, ?)</code>), eliminating SQL injection risks.</li>
+<li>Supports context management (<code>with EvidenceStore("triage.db") as store:</code>).</li>
+<li>Enforces unique fingerprint constraints on alerts to prevent duplicate database entries.</li>
+<li><code>bounded_worker_pool(func, items, max_workers=4) -&gt; list[tuple]</code>:</li>
+<li>Uses <code>concurrent.futures.ThreadPoolExecutor</code> to execute I/O-bound tasks concurrently.</li>
+<li>Bounds concurrency to prevent thread exhaustion.</li>
+<li>Captures per-worker exceptions gracefully without crashing the overall workflow.</li>
+</ol>
+<hr />
+<h3>Module 9: Central CLI &amp; Packaging</h3>
+<ul>
+<li><strong>File:</strong> <a href="file:///home/badguy/security-scripts/src/sectoolkit/cli.py"><code>cli.py</code></a> &amp; <a href="file:///home/badguy/security-scripts/pyproject.toml"><code>pyproject.toml</code></a></li>
+<li><strong>Test Suite:</strong> <a href="file:///home/badguy/security-scripts/tests/test_cli.py"><code>test_cli.py</code></a> (3 tests)</li>
+</ul>
+<h4>Why We Need It</h4>
+<p>Security analysts need an ergonomic, scriptable terminal interface that integrates all toolkit capabilities into a single binary (<code>sectoolkit</code>).</p>
+<h4>CLI Commands</h4>
+<ul>
+<li><code>sectoolkit triage &lt;alerts.json&gt; [--min-score 2.0]</code>: Ingests, normalizes, deduplicates, and ranks raw alert batches.</li>
+<li><code>sectoolkit manifest &lt;evidence_dir&gt; [-o output.json]</code>: Generates a cryptographic evidence manifest.</li>
+<li><code>sectoolkit ioc "&lt;text_or_file&gt;"</code>: Parses unstructured threat intel and extracts validated IOCs.</li>
+<li><code>sectoolkit audit-port &lt;host&gt; &lt;port&gt; [--timeout 2.0]</code>: Checks target port accessibility.</li>
+</ul>
+<h4>Packaging Configuration</h4>
+<p>Standardized <code>pyproject.toml</code> configuration enables zero-dependency installation and global CLI registration via pip:</p>
+<div class="codehilite"><pre><span></span><code>.venv/bin/pip<span class="w"> </span>install<span class="w"> </span>--no-build-isolation<span class="w"> </span>-e<span class="w"> </span>.
+</code></pre></div>
+
+<hr />
+<h2>4. Verification &amp; Testing Summary</h2>
+<p>Every capability in <code>sectoolkit</code> is backed by automated unit tests covering both the happy path and adversarial edge cases.</p>
+<div class="codehilite"><pre><span></span><code><span class="nx">test_cli_ioc_inline</span><span class="w"> </span><span class="p">(</span><span class="nx">test_cli</span><span class="p">.</span><span class="nx">TestCLI</span><span class="p">)</span><span class="w"> </span><span class="o">........................</span><span class="p">.</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_cli_manifest</span><span class="w"> </span><span class="p">(</span><span class="nx">test_cli</span><span class="p">.</span><span class="nx">TestCLI</span><span class="p">)</span><span class="w"> </span><span class="o">...........................</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_cli_triage</span><span class="w"> </span><span class="p">(</span><span class="nx">test_cli</span><span class="p">.</span><span class="nx">TestCLI</span><span class="p">)</span><span class="w"> </span><span class="o">...........................</span><span class="p">..</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_generate_and_verify_manifest</span><span class="w"> </span><span class="p">(</span><span class="nx">test_forensics</span><span class="p">.</span><span class="nx">TestForensics</span><span class="p">)</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_parse_iso_timestamp</span><span class="w"> </span><span class="p">(</span><span class="nx">test_forensics</span><span class="p">.</span><span class="nx">TestForensics</span><span class="p">)</span><span class="w"> </span><span class="o">......</span><span class="p">..</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_parse_iso_timestamp_invalid</span><span class="w"> </span><span class="p">(</span><span class="nx">test_forensics</span><span class="p">.</span><span class="nx">TestForensics</span><span class="p">)</span><span class="w">  </span><span class="nx">ok</span>
+<span class="nx">test_safe_exec</span><span class="w"> </span><span class="p">(</span><span class="nx">test_forensics</span><span class="p">.</span><span class="nx">TestForensics</span><span class="p">)</span><span class="w"> </span><span class="o">..................</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_safe_exec_invalid_args</span><span class="w"> </span><span class="p">(</span><span class="nx">test_forensics</span><span class="p">.</span><span class="nx">TestForensics</span><span class="p">)</span><span class="w"> </span><span class="o">...</span><span class="p">..</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_defang_indicator</span><span class="w"> </span><span class="p">(</span><span class="nx">test_ioc</span><span class="p">.</span><span class="nx">TestIOC</span><span class="p">)</span><span class="w"> </span><span class="o">.....................</span><span class="p">..</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_extract_iocs</span><span class="w"> </span><span class="p">(</span><span class="nx">test_ioc</span><span class="p">.</span><span class="nx">TestIOC</span><span class="p">)</span><span class="w"> </span><span class="o">...........................</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_sha256_file</span><span class="w"> </span><span class="p">(</span><span class="nx">test_ioc</span><span class="p">.</span><span class="nx">TestIOC</span><span class="p">)</span><span class="w"> </span><span class="o">...........................</span><span class="p">.</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_sha256_file_missing</span><span class="w"> </span><span class="p">(</span><span class="nx">test_ioc</span><span class="p">.</span><span class="nx">TestIOC</span><span class="p">)</span><span class="w"> </span><span class="o">..................</span><span class="p">..</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_batch_stream</span><span class="w"> </span><span class="p">(</span><span class="nx">test_log_stream</span><span class="p">.</span><span class="nx">TestLogStream</span><span class="p">)</span><span class="w"> </span><span class="o">............</span><span class="p">..</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_batch_stream_invalid_size</span><span class="w"> </span><span class="p">(</span><span class="nx">test_log_stream</span><span class="p">.</span><span class="nx">TestLogStream</span><span class="p">)</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_stream_json_lines</span><span class="w"> </span><span class="p">(</span><span class="nx">test_log_stream</span><span class="p">.</span><span class="nx">TestLogStream</span><span class="p">)</span><span class="w"> </span><span class="o">.........</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_stream_lines_all</span><span class="w"> </span><span class="p">(</span><span class="nx">test_log_stream</span><span class="p">.</span><span class="nx">TestLogStream</span><span class="p">)</span><span class="w"> </span><span class="o">.........</span><span class="p">.</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_stream_lines_filter</span><span class="w"> </span><span class="p">(</span><span class="nx">test_log_stream</span><span class="p">.</span><span class="nx">TestLogStream</span><span class="p">)</span><span class="w"> </span><span class="o">......</span><span class="p">.</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_stream_lines_missing_file</span><span class="w"> </span><span class="p">(</span><span class="nx">test_log_stream</span><span class="p">.</span><span class="nx">TestLogStream</span><span class="p">)</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_check_tcp_closed</span><span class="w"> </span><span class="p">(</span><span class="nx">test_net_audit</span><span class="p">.</span><span class="nx">TestNetAudit</span><span class="p">)</span><span class="w"> </span><span class="o">............</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_check_tcp_invalid_port</span><span class="w"> </span><span class="p">(</span><span class="nx">test_net_audit</span><span class="p">.</span><span class="nx">TestNetAudit</span><span class="p">)</span><span class="w"> </span><span class="o">......</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_parse_suricata_eve_and_top_talkers</span><span class="w"> </span><span class="p">(</span><span class="nx">test_net_audit</span><span class="p">)</span><span class="w"> </span><span class="o">......</span><span class="p">.</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_subnet_hosts</span><span class="w"> </span><span class="p">(</span><span class="nx">test_net_audit</span><span class="p">.</span><span class="nx">TestNetAudit</span><span class="p">)</span><span class="w"> </span><span class="o">...............</span><span class="p">.</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_subnet_hosts_invalid</span><span class="w"> </span><span class="p">(</span><span class="nx">test_net_audit</span><span class="p">.</span><span class="nx">TestNetAudit</span><span class="p">)</span><span class="w"> </span><span class="o">......</span><span class="p">..</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_redact_secrets_nested</span><span class="w"> </span><span class="p">(</span><span class="nx">test_security</span><span class="p">.</span><span class="nx">TestSecurity</span><span class="p">)</span><span class="w"> </span><span class="o">......</span><span class="p">..</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_redact_secrets_simple</span><span class="w"> </span><span class="p">(</span><span class="nx">test_security</span><span class="p">.</span><span class="nx">TestSecurity</span><span class="p">)</span><span class="w"> </span><span class="o">......</span><span class="p">..</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_safe_child_same_dir</span><span class="w"> </span><span class="p">(</span><span class="nx">test_security</span><span class="p">.</span><span class="nx">TestSecurity</span><span class="p">)</span><span class="w"> </span><span class="o">.........</span><span class="p">.</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_safe_child_traversal_blocked</span><span class="w"> </span><span class="p">(</span><span class="nx">test_security</span><span class="p">.</span><span class="nx">TestSecurity</span><span class="p">)</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_safe_child_valid</span><span class="w"> </span><span class="p">(</span><span class="nx">test_security</span><span class="p">.</span><span class="nx">TestSecurity</span><span class="p">)</span><span class="w"> </span><span class="o">............</span><span class="p">.</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_alert_storage_and_deduplication</span><span class="w"> </span><span class="p">(</span><span class="nx">test_storage</span><span class="p">.</span><span class="nx">TestStorage</span><span class="p">)</span><span class="w">  </span><span class="nx">ok</span>
+<span class="nx">test_bounded_worker_pool</span><span class="w"> </span><span class="p">(</span><span class="nx">test_storage</span><span class="p">.</span><span class="nx">TestStorage</span><span class="p">)</span><span class="w"> </span><span class="o">............</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_indicator_storage</span><span class="w"> </span><span class="p">(</span><span class="nx">test_storage</span><span class="p">.</span><span class="nx">TestStorage</span><span class="p">)</span><span class="w"> </span><span class="o">............</span><span class="p">..</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_indicator_validation</span><span class="w"> </span><span class="p">(</span><span class="nx">test_storage</span><span class="p">.</span><span class="nx">TestStorage</span><span class="p">)</span><span class="w"> </span><span class="o">.........</span><span class="p">..</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_fingerprint_deterministic</span><span class="w"> </span><span class="p">(</span><span class="nx">test_triage</span><span class="p">.</span><span class="nx">TestTriage</span><span class="p">)</span><span class="w"> </span><span class="o">......</span><span class="p">..</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_normalize_alert_alternate_fields</span><span class="w"> </span><span class="p">(</span><span class="nx">test_triage</span><span class="p">.</span><span class="nx">TestTriage</span><span class="p">)</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_normalize_alert_invalid_type</span><span class="w"> </span><span class="p">(</span><span class="nx">test_triage</span><span class="p">.</span><span class="nx">TestTriage</span><span class="p">)</span><span class="w"> </span><span class="o">...</span><span class="p">..</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_normalize_alert_standard</span><span class="w"> </span><span class="p">(</span><span class="nx">test_triage</span><span class="p">.</span><span class="nx">TestTriage</span><span class="p">)</span><span class="w"> </span><span class="o">.........</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_priority_score_invalid_ranges</span><span class="w"> </span><span class="p">(</span><span class="nx">test_triage</span><span class="p">.</span><span class="nx">TestTriage</span><span class="p">)</span><span class="w"> </span><span class="o">...</span><span class="p">.</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_priority_score_invalid_types</span><span class="w"> </span><span class="p">(</span><span class="nx">test_triage</span><span class="p">.</span><span class="nx">TestTriage</span><span class="p">)</span><span class="w"> </span><span class="o">...</span><span class="p">..</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_priority_score_valid</span><span class="w"> </span><span class="p">(</span><span class="nx">test_triage</span><span class="p">.</span><span class="nx">TestTriage</span><span class="p">)</span><span class="w"> </span><span class="o">............</span><span class="p">.</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_triage_alerts_pipeline</span><span class="w"> </span><span class="p">(</span><span class="nx">test_triage</span><span class="p">.</span><span class="nx">TestTriage</span><span class="p">)</span><span class="w"> </span><span class="o">.........</span><span class="p">..</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_is_private_ip</span><span class="w"> </span><span class="p">(</span><span class="nx">test_validators</span><span class="p">.</span><span class="nx">TestValidators</span><span class="p">)</span><span class="w"> </span><span class="o">............</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_is_private_ip_invalid</span><span class="w"> </span><span class="p">(</span><span class="nx">test_validators</span><span class="p">.</span><span class="nx">TestValidators</span><span class="p">)</span><span class="w"> </span><span class="o">...</span><span class="p">.</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_normalize_username</span><span class="w"> </span><span class="p">(</span><span class="nx">test_validators</span><span class="p">.</span><span class="nx">TestValidators</span><span class="p">)</span><span class="w"> </span><span class="o">......</span><span class="p">.</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_normalize_username_invalid_type</span><span class="w"> </span><span class="p">(</span><span class="nx">test_validators</span><span class="p">)</span><span class="w"> </span><span class="o">.........</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_parse_port_invalid_range</span><span class="w"> </span><span class="p">(</span><span class="nx">test_validators</span><span class="p">.</span><span class="nx">TestValidators</span><span class="p">)</span><span class="w"> </span><span class="p">.</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_parse_port_invalid_type</span><span class="w"> </span><span class="p">(</span><span class="nx">test_validators</span><span class="p">.</span><span class="nx">TestValidators</span><span class="p">)</span><span class="w"> </span><span class="p">..</span><span class="w"> </span><span class="nx">ok</span>
+<span class="nx">test_parse_port_valid</span><span class="w"> </span><span class="p">(</span><span class="nx">test_validators</span><span class="p">.</span><span class="nx">TestValidators</span><span class="p">)</span><span class="w"> </span><span class="o">.........</span><span class="w"> </span><span class="nx">ok</span>
+<span class="o">----------------------------------------------------------------------</span>
+<span class="nx">Ran</span><span class="w"> </span><span class="mi">47</span><span class="w"> </span><span class="nx">tests</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="m m-Double">0.108</span><span class="nx">s</span><span class="w"> </span><span class="err">—</span><span class="w"> </span><span class="nx">ALL</span><span class="w"> </span><span class="nx">PASSING</span><span class="w"> </span><span class="p">(</span><span class="nx">OK</span><span class="p">)</span>
+</code></pre></div>
+
+<hr />
+<h2>5. How It Works in Future Operational Deployments</h2>
+<div class="codehilite"><pre><span></span><code><span class="n">sequenceDiagram</span>
+<span class="w">    </span><span class="n">autonumber</span>
+<span class="w">    </span><span class="n">participant</span><span class="w"> </span><span class="n">Sensor</span><span class="w"> </span><span class="n">as</span><span class="w"> </span><span class="n">SIEM</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">Sensor</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">EDR</span>
+<span class="w">    </span><span class="n">participant</span><span class="w"> </span><span class="n">Pipeline</span><span class="w"> </span><span class="n">as</span><span class="w"> </span><span class="n">sectoolkit</span><span class="w"> </span><span class="n">Pipeline</span>
+<span class="w">    </span><span class="n">participant</span><span class="w"> </span><span class="n">DB</span><span class="w"> </span><span class="n">as</span><span class="w"> </span><span class="n">Evidence</span><span class="w"> </span><span class="n">Store</span><span class="w"> </span><span class="p">(</span><span class="n">SQLite</span><span class="o">/</span><span class="n">PostgreSQL</span><span class="p">)</span>
+<span class="w">    </span><span class="n">participant</span><span class="w"> </span><span class="n">Analyst</span><span class="w"> </span><span class="n">as</span><span class="w"> </span><span class="n">Analyst</span><span class="w"> </span><span class="n">Queue</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">SOAR</span>
+
+<span class="w">    </span><span class="n">Sensor</span><span class="o">-&gt;&gt;</span><span class="n">Pipeline</span><span class="o">:</span><span class="w"> </span><span class="n">Raw</span><span class="w"> </span><span class="n">JSON</span><span class="w"> </span><span class="n">Events</span><span class="w"> </span><span class="n">Stream</span>
+<span class="w">    </span><span class="n">Pipeline</span><span class="o">-&gt;&gt;</span><span class="n">Pipeline</span><span class="o">:</span><span class="w"> </span><span class="n">stream_json_lines</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">normalize_alert</span><span class="p">()</span>
+<span class="w">    </span><span class="n">Pipeline</span><span class="o">-&gt;&gt;</span><span class="n">Pipeline</span><span class="o">:</span><span class="w"> </span><span class="n">fingerprint</span><span class="p">()</span><span class="w"> </span><span class="n">Deduplication</span>
+<span class="w">    </span><span class="n">Pipeline</span><span class="o">-&gt;&gt;</span><span class="n">Pipeline</span><span class="o">:</span><span class="w"> </span><span class="n">priority_score</span><span class="p">()</span><span class="w"> </span><span class="n">Risk</span><span class="w"> </span><span class="n">Calculation</span>
+<span class="w">    </span><span class="n">Pipeline</span><span class="o">-&gt;&gt;</span><span class="n">DB</span><span class="o">:</span><span class="w"> </span><span class="n">add_alert</span><span class="p">()</span><span class="w"> </span><span class="p">[</span><span class="n">Parameterized</span><span class="w"> </span><span class="n">Insert</span><span class="p">]</span>
+<span class="w">    </span><span class="n">Pipeline</span><span class="o">-&gt;&gt;</span><span class="n">Analyst</span><span class="o">:</span><span class="w"> </span><span class="n">Ranked</span><span class="w"> </span><span class="n">Alerts</span><span class="w"> </span><span class="p">(</span><span class="n">score</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">threshold</span><span class="p">)</span>
+<span class="w">    </span><span class="n">Analyst</span><span class="o">-&gt;&gt;</span><span class="n">Pipeline</span><span class="o">:</span><span class="w"> </span><span class="n">Request</span><span class="w"> </span><span class="n">Forensic</span><span class="w"> </span><span class="n">Artifacts</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">Manifest</span>
+<span class="w">    </span><span class="n">Pipeline</span><span class="o">-&gt;&gt;</span><span class="n">DB</span><span class="o">:</span><span class="w"> </span><span class="n">Query</span><span class="w"> </span><span class="n">Evidence</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">IOCs</span>
+</code></pre></div>
+
+<h3>Operational Use Cases</h3>
+<ol>
+<li><strong>Automated SOC Ingestion &amp; Triage</strong>:</li>
+<li>Schedule <code>sectoolkit triage</code> via cron or SOAR to ingest hourly alert dumps from Splunk, Elastic, or Microsoft Sentinel.</li>
+<li>Filter out duplicate noise and route critical alerts ($\ge 3.0$) straight to high-priority analyst queues.</li>
+<li><strong>DFIR Evidence Ingestion &amp; Chain of Custody</strong>:</li>
+<li>Run <code>sectoolkit manifest /mnt/evidence/drive_image -o manifest.json</code> immediately upon receiving forensic images.</li>
+<li>Run <code>sectoolkit verify_manifest</code> prior to courtroom testimony or post-incident review to prove data was not altered.</li>
+<li><strong>Threat Intel Ingestion Pipeline</strong>:</li>
+<li>Pipe raw OSINT blogs or CISA advisories into <code>sectoolkit ioc</code> to extract indicators, store them in <code>EvidenceStore</code>, and defang them for safe analyst review.</li>
+<li><strong>Active Perimeter &amp; Internal Audits</strong>:</li>
+<li>Combine <code>subnet_hosts</code> with <code>bounded_worker_pool(check_tcp, hosts)</code> to conduct non-intrusive, authorized port reachability checks across enterprise subnets.</li>
+</ol>
+<hr />
+<h2>6. Project Files Quick Reference</h2>
+<ul>
+<li><strong>Package Entry Point</strong>: <a href="file:///home/badguy/security-scripts/src/sectoolkit/__init__.py"><code>__init__.py</code></a></li>
+<li><strong>Roadmap &amp; CLI Instructions</strong>: <a href="file:///home/badguy/security-scripts/README.md"><code>README.md</code></a></li>
+<li><strong>Source Modules</strong>:</li>
+<li><a href="file:///home/badguy/security-scripts/src/sectoolkit/validators.py"><code>validators.py</code></a></li>
+<li><a href="file:///home/badguy/security-scripts/src/sectoolkit/security.py"><code>security.py</code></a></li>
+<li><a href="file:///home/badguy/security-scripts/src/sectoolkit/ioc.py"><code>ioc.py</code></a></li>
+<li><a href="file:///home/badguy/security-scripts/src/sectoolkit/triage.py"><code>triage.py</code></a></li>
+<li><a href="file:///home/badguy/security-scripts/src/sectoolkit/log_stream.py"><code>log_stream.py</code></a></li>
+<li><a href="file:///home/badguy/security-scripts/src/sectoolkit/net_audit.py"><code>net_audit.py</code></a></li>
+<li><a href="file:///home/badguy/security-scripts/src/sectoolkit/forensics.py"><code>forensics.py</code></a></li>
+<li><a href="file:///home/badguy/security-scripts/src/sectoolkit/storage.py"><code>storage.py</code></a></li>
+<li><a href="file:///home/badguy/security-scripts/src/sectoolkit/cli.py"><code>cli.py</code></a></li>
+</ul>
+    </div>
+</body>
+</html>

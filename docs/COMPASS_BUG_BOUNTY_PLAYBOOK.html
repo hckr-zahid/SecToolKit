@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compass Bug Bounty Program: Zero-to-Advanced Playbook</title>
+  <style>
+    :root {
+      --bg-canvas: #0d1117;
+      --bg-surface: #161b22;
+      --bg-subtle: #21262d;
+      --border-default: #30363d;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --accent-blue: #58a6ff;
+      --accent-cyan: #39c5cf;
+      --accent-purple: #d2a8ff;
+      --code-text: #ff7b72;
+      --code-bg: #1f242c;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.7;
+      color: var(--text-primary);
+      background: var(--bg-canvas);
+      margin: 0;
+      padding: 0;
+    }
+    .layout {
+      display: flex;
+      max-width: 1440px;
+      margin: 0 auto;
+      gap: 24px;
+      padding: 24px;
+    }
+    .sidebar {
+      width: 290px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 20px;
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: 12px;
+      padding: 18px 16px;
+      font-size: 0.86rem;
+    }
+    .sidebar-title {
+      font-weight: 700;
+      color: var(--accent-cyan);
+      margin-bottom: 10px;
+      font-size: 0.92rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .sidebar ul { list-style: none; padding-left: 10px; margin: 4px 0; }
+    .sidebar > .toc > ul { padding-left: 0; }
+    .sidebar li { margin: 4px 0; }
+    .sidebar a { color: var(--text-secondary); text-decoration: none; display: block; padding: 2px 0; }
+    .sidebar a:hover { color: var(--accent-blue); }
+    .container {
+      flex: 1;
+      min-width: 0;
+      background: var(--bg-surface);
+      padding: 44px 48px;
+      border-radius: 12px;
+      border: 1px solid var(--border-default);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+    }
+    h1 {
+      color: var(--accent-blue);
+      border-bottom: 2px solid var(--border-default);
+      padding-bottom: 0.4em;
+      margin-top: 0;
+      font-size: 2rem;
+    }
+    h2 {
+      color: var(--accent-blue);
+      border-bottom: 1px solid var(--border-default);
+      padding-bottom: 0.3em;
+      margin-top: 2em;
+    }
+    h3 { color: var(--accent-cyan); margin-top: 1.5em; }
+    h4 { color: var(--accent-purple); }
+    a { color: var(--accent-blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    hr { border: 0; border-top: 1px solid var(--border-default); margin: 28px 0; }
+    blockquote {
+      margin: 16px 0;
+      padding: 12px 18px;
+      background: rgba(88, 166, 255, 0.08);
+      border-left: 4px solid var(--accent-blue);
+      border-radius: 0 8px 8px 0;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.9em;
+      background: var(--code-bg);
+      color: var(--code-text);
+      padding: 2px 6px;
+      border-radius: 5px;
+    }
+    pre {
+      position: relative;
+      background: #0b0f14;
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+      margin: 14px 0;
+    }
+    pre code {
+      background: transparent;
+      color: #c9d1d9;
+      padding: 0;
+      font-size: 0.88em;
+      line-height: 1.55;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--bg-subtle);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-default);
+      border-radius: 6px;
+      padding: 3px 9px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .copy-btn:hover { color: var(--text-primary); border-color: var(--accent-blue); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.94em;
+    }
+    th, td {
+      border: 1px solid var(--border-default);
+      padding: 10px 14px;
+      text-align: left;
+    }
+    th { background: var(--bg-subtle); color: var(--accent-blue); }
+    tr:nth-child(even) td { background: rgba(255, 255, 255, 0.02); }
+    ul, ol { padding-left: 24px; }
+    li { margin: 5px 0; }
+    @media (max-width: 960px) {
+      .layout { flex-direction: column; padding: 12px; }
+      .sidebar { position: static; width: 100%; max-height: none; }
+      .container { padding: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-title">Compass Playbook</div>
+      <div class="toc">
+<ul>
+<li><a href="#compass-bug-bounty-program-zero-to-advanced-testing-playbook">Compass Bug Bounty Program: Zero-to-Advanced Testing Playbook</a><ul>
+<li><a href="#table-of-contents">Table of Contents</a></li>
+<li><a href="#1-compass-program-snapshot-hard-guardrails">1. Compass Program Snapshot &amp; Hard Guardrails</a><ul>
+<li><a href="#program-highlights">Program Highlights</a></li>
+<li><a href="#non-negotiable-rules-violating-these-na-or-ban">Non-Negotiable Rules (Violating These = N/A or Ban)</a></li>
+</ul>
+</li>
+<li><a href="#2-zero-to-ready-lab-setup-for-compass">2. Zero-to-Ready Lab Setup for Compass</a><ul>
+<li><a href="#step-21-create-your-workspace">Step 2.1: Create Your Workspace</a></li>
+<li><a href="#step-22-configure-burp-suite-caido">Step 2.2: Configure Burp Suite / Caido</a></li>
+<li><a href="#step-23-create-two-consumer-test-accounts">Step 2.3: Create Two Consumer Test Accounts</a></li>
+</ul>
+</li>
+<li><a href="#3-end-to-end-compass-testing-workflow">3. End-to-End Compass Testing Workflow</a></li>
+<li><a href="#4-phase-1-policy-compliant-reconnaissance-js-mining">4. Phase 1: Policy-Compliant Reconnaissance &amp; JS Mining</a><ul>
+<li><a href="#step-41-passive-subdomain-discovery">Step 4.1: Passive Subdomain Discovery</a></li>
+<li><a href="#step-42-gentle-live-probing-respecting-rate-scope">Step 4.2: Gentle Live Probing (Respecting Rate &amp; Scope)</a></li>
+<li><a href="#step-43-mining-compass-javascript-bundles">Step 4.3: Mining Compass JavaScript Bundles</a></li>
+</ul>
+</li>
+<li><a href="#5-phase-2-consumer-feature-mapping-what-to-test-vs-skip">5. Phase 2: Consumer Feature Mapping (What to Test vs. Skip)</a></li>
+<li><a href="#6-phase-3-access-control-testing-idor-bola-bfla">6. Phase 3: Access Control Testing (IDOR / BOLA / BFLA)</a><ul>
+<li><a href="#step-61-horizontal-idor-buyer-a-buyer-b">Step 6.1: Horizontal IDOR (Buyer A -&gt; Buyer B)</a></li>
+<li><a href="#step-62-vertical-privilege-escalation-consumer-agent-staff-bfla">Step 6.2: Vertical Privilege Escalation (Consumer -&gt; Agent / Staff BFLA)</a></li>
+</ul>
+</li>
+<li><a href="#7-phase-4-authentication-sessions-jwt-oauth">7. Phase 4: Authentication, Sessions, JWT &amp; OAuth</a><ul>
+<li><a href="#step-71-session-token-lifecycle">Step 7.1: Session &amp; Token Lifecycle</a></li>
+<li><a href="#step-72-oauth-sso-testing">Step 7.2: OAuth / SSO Testing</a></li>
+<li><a href="#step-73-password-reset-flow">Step 7.3: Password Reset Flow</a></li>
+</ul>
+</li>
+<li><a href="#8-phase-5-server-side-injection-testing-manual-safe">8. Phase 5: Server-Side &amp; Injection Testing (Manual &amp; Safe)</a><ul>
+<li><a href="#step-81-manual-sql-injection-non-search-endpoints">Step 8.1: Manual SQL Injection (Non-Search Endpoints)</a></li>
+<li><a href="#step-82-ssrf-image-import-webhooks-pdfshare-previews">Step 8.2: SSRF (Image Import, Webhooks, PDF/Share Previews)</a></li>
+<li><a href="#step-83-ssti-path-traversal">Step 8.3: SSTI &amp; Path Traversal</a></li>
+</ul>
+</li>
+<li><a href="#9-phase-6-client-side-modern-browser-attacks">9. Phase 6: Client-Side &amp; Modern Browser Attacks</a><ul>
+<li><a href="#step-91-context-aware-xss">Step 9.1: Context-Aware XSS</a></li>
+<li><a href="#step-92-cors-misconfigurations">Step 9.2: CORS Misconfigurations</a></li>
+<li><a href="#step-93-modern-client-side-checks">Step 9.3: Modern Client-Side Checks</a></li>
+</ul>
+</li>
+<li><a href="#10-phase-7-apis-graphql-file-uploads-races-cache">10. Phase 7: APIs, GraphQL, File Uploads, Races &amp; Cache</a><ul>
+<li><a href="#step-101-graphql-testing">Step 10.1: GraphQL Testing</a></li>
+<li><a href="#step-102-file-uploads-profile-document-uploads">Step 10.2: File Uploads (Profile / Document Uploads)</a></li>
+<li><a href="#step-103-race-conditions-burp-single-packet-attack">Step 10.3: Race Conditions (Burp Single-Packet Attack)</a></li>
+<li><a href="#step-104-cache-poisoning-with-cache-buster-only">Step 10.4: Cache Poisoning (With Cache-Buster Only!)</a></li>
+</ul>
+</li>
+<li><a href="#11-phase-8-verification-impact-compass-report-template">11. Phase 8: Verification, Impact &amp; Compass Report Template</a><ul>
+<li><a href="#before-clicking-submit">Before Clicking "Submit"</a></li>
+<li><a href="#compass-ready-report-template">Compass-Ready Report Template</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+
+    </aside>
+    <main class="container">
+      <h1 id="compass-bug-bounty-program-zero-to-advanced-testing-playbook">Compass Bug Bounty Program: Zero-to-Advanced Testing Playbook</h1>
+<p><strong>Program-Specific Methodology, Guardrails, Step-by-Step Workflow, Practical Examples &amp; Reporting Guide</strong></p>
+<blockquote>
+<p><strong>Program Compliance First</strong>: This playbook is tailored strictly to the <strong>Compass Bug Bounty Policy</strong> on HackerOne. Always stay within Compass-owned in-scope assets, enforce rate discipline, include your mandatory <code>X-Bug-Bounty</code> header on every request, and stop immediately if you encounter non-test PII.</p>
+</blockquote>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol>
+<li><a href="#1-compass-program-snapshot--hard-guardrails">Compass Program Snapshot &amp; Hard Guardrails</a></li>
+<li><a href="#2-zero-to-ready-lab-setup-for-compass">Zero-to-Ready Lab Setup for Compass</a></li>
+<li><a href="#3-end-to-end-compass-testing-workflow">End-to-End Compass Testing Workflow</a></li>
+<li><a href="#4-phase-1-policy-compliant-reconnaissance--js-mining">Phase 1: Policy-Compliant Reconnaissance &amp; JS Mining</a></li>
+<li><a href="#5-phase-2-consumer-feature-mapping-what-to-test-vs-skip">Phase 2: Consumer Feature Mapping (What to Test vs. Skip)</a></li>
+<li><a href="#6-phase-3-access-control-testing-idor--bola--bfla">Phase 3: Access Control Testing (IDOR / BOLA / BFLA)</a></li>
+<li><a href="#7-phase-4-authentication-sessions-jwt--oauth">Phase 4: Authentication, Sessions, JWT &amp; OAuth</a></li>
+<li><a href="#8-phase-5-server-side--injection-testing-manual--safe">Phase 5: Server-Side &amp; Injection Testing (Manual &amp; Safe)</a></li>
+<li><a href="#9-phase-6-client-side--modern-browser-attacks">Phase 6: Client-Side &amp; Modern Browser Attacks</a></li>
+<li><a href="#10-phase-7-apis-graphql-file-uploads-races--cache">Phase 7: APIs, GraphQL, File Uploads, Races &amp; Cache</a></li>
+<li><a href="#11-phase-8-verification-impact--compass-report-template">Phase 8: Verification, Impact &amp; Compass Report Template</a></li>
+</ol>
+<hr />
+<h2 id="1-compass-program-snapshot-hard-guardrails">1. Compass Program Snapshot &amp; Hard Guardrails</h2>
+<h3 id="program-highlights">Program Highlights</h3>
+<ul>
+<li><strong>Platform</strong>: HackerOne (Public, <code>0.0+</code> Signal required)</li>
+<li><strong>Safe Harbor</strong>: Gold Standard Safe Harbor</li>
+<li><strong>Response &amp; Payout</strong>: &gt;90% response efficiency, ~5 business days first response, ~10 business days triage, ~1 week 6 days average time to bounty</li>
+<li><strong>Average Bounties</strong>: Low <code>$300</code> | Medium <code>$800</code> | High <code>$3,000</code> | Critical <code>$6,000</code></li>
+<li><strong>Account Classes</strong>: <code>Consumer (Buyer/Seller)</code> -&gt; <code>Agent</code> -&gt; <code>Staff</code></li>
+</ul>
+<h3 id="non-negotiable-rules-violating-these-na-or-ban">Non-Negotiable Rules (Violating These = N/A or Ban)</h3>
+<ol>
+<li><strong>Mandatory Custom Header</strong> on <em>all</em> requests:
+   <code>http
+   X-Bug-Bounty: HackerOne-&lt;your_username&gt;</code></li>
+<li><strong>Search Box = MANUAL TESTING ONLY</strong>: Never run <code>ffuf</code>, <code>sqlmap</code>, <code>nuclei</code>, or Intruder against search endpoints.</li>
+<li><strong>Never Trigger Agent or Staff Notifications</strong>: Do <strong>not</strong> test "Work with an Agent", agent contact forms, or anything that creates support tickets.</li>
+<li><strong>Consumer Accounts Only</strong>: Self-register <strong>only</strong> Buyer/Seller accounts using <code>@wearehackerone.com</code>. Never attempt to register or social-engineer an Agent account.</li>
+<li><strong>Out-of-Scope Assets</strong>:
+   - Agent marketing sites on Squarespace/Wix/etc.
+   - <code>https://www.compass.com/notifications/emails/*</code>
+   - GitHub Wiki pages, public Google Calendars, Iorad links
+   - <strong>Anywhere Real Estate</strong> (<code>hackerone.com/anywhererealestate</code>)</li>
+<li><strong>Known Expected Behaviors (Do NOT Report)</strong>:
+   - <code>personIDs</code> are <strong>not</strong> secret.
+   - Agent PII (names, emails, phones, addresses) is intentionally public—even on "private" profiles.
+   - <strong>Collections</strong>: Invited users removing anyone/listings or inviting other users without an invitation is expected.
+   - Client-side Google Maps API keys (unless you prove direct abuse/restriction bypass).
+   - Untested credential dumps or non-employee <code>@compass.com</code> agent credentials on third-party sites.</li>
+</ol>
+<hr />
+<h2 id="2-zero-to-ready-lab-setup-for-compass">2. Zero-to-Ready Lab Setup for Compass</h2>
+<h3 id="step-21-create-your-workspace">Step 2.1: Create Your Workspace</h3>
+<pre><code class="language-bash">mkdir -p ~/bounty/compass/{recon,endpoints,js,notes,pocs}
+cd ~/bounty/compass
+</code></pre>
+<h3 id="step-22-configure-burp-suite-caido">Step 2.2: Configure Burp Suite / Caido</h3>
+<ol>
+<li><strong>Scope</strong>: Add Compass's in-scope domains from the HackerOne Scope tab (e.g., <code>^.*\.compass\.com$</code>) and enable <strong>"Don't send items to Proxy history if out of scope"</strong>.</li>
+<li><strong>Mandatory Header (Match &amp; Replace)</strong>:
+   - Burp -&gt; <strong>Proxy</strong> -&gt; <strong>Proxy Settings</strong> -&gt; <strong>Match and Replace</strong> -&gt; <strong>Add</strong>:<ul>
+<li><strong>Type</strong>: <code>Request header</code></li>
+<li><strong>Match</strong>: <em>(leave empty)</em></li>
+<li><strong>Replace</strong>: <code>X-Bug-Bounty: HackerOne-&lt;your_username&gt;</code></li>
+<li>Verify in <strong>Proxy -&gt; HTTP history</strong> that every outgoing request carries this header.</li>
+</ul>
+</li>
+</ol>
+<h3 id="step-23-create-two-consumer-test-accounts">Step 2.3: Create Two Consumer Test Accounts</h3>
+<ol>
+<li>Install <strong>Firefox Multi-Account Containers</strong>.</li>
+<li>Open <strong>Container 1 (Red)</strong> -&gt; register <strong>Buyer A</strong>: <code>&lt;your_h1_username&gt;+buyerA@wearehackerone.com</code>.</li>
+<li>Open <strong>Container 2 (Blue)</strong> -&gt; register <strong>Buyer B</strong>: <code>&lt;your_h1_username&gt;+buyerB@wearehackerone.com</code>.</li>
+<li>Confirm both accounts work before running any tests.</li>
+</ol>
+<hr />
+<h2 id="3-end-to-end-compass-testing-workflow">3. End-to-End Compass Testing Workflow</h2>
+<pre><code class="language-text">[1. Setup] -&gt; Header X-Bug-Bounty set + Buyer A &amp; Buyer B logged in
+     │
+     ▼
+[2. Passive Recon &amp; JS Mining] -&gt; Find Compass-owned APIs, subdomains, &amp; hidden routes
+     │                            (Skip Squarespace/Wix &amp; never fuzz search)
+     ▼
+[3. Manual Consumer Walkthrough] -&gt; Map Profile, Saved Searches, Collections, Uploads, Auth
+     │
+     ▼
+[4. Access Control (High ROI)] -&gt; Buyer A vs Buyer B IDOR + Consumer -&gt; Agent/Staff BFLA
+     │
+     ▼
+[5. Auth, OAuth &amp; Session] -&gt; Reset flows, SSO/OAuth, JWT/Cookies, 2FA
+     │
+     ▼
+[6. Injection &amp; Server-Side] -&gt; Manual SQLi, SSRF (images/exports), SSTI, Path Traversal
+     │
+     ▼
+[7. Client-Side &amp; Modern] -&gt; Stored/DOM XSS, CORS, postMessage, Prototype Pollution, GraphQL
+     │
+     ▼
+[8. Verify &amp; Report] -&gt; Minimal PoC, no real PII saved, clear Impact + Remediation
+</code></pre>
+<hr />
+<h2 id="4-phase-1-policy-compliant-reconnaissance-js-mining">4. Phase 1: Policy-Compliant Reconnaissance &amp; JS Mining</h2>
+<p>Because <code>compass.com</code> is a large, mature platform, <strong>passive recon + JavaScript analysis</strong> is far more effective (and safer) than noisy brute-force scanning.</p>
+<h3 id="step-41-passive-subdomain-discovery">Step 4.1: Passive Subdomain Discovery</h3>
+<pre><code class="language-bash"># Passive enumeration (zero traffic to Compass servers)
+subfinder -d compass.com -all -silent -o recon/subs_subfinder.txt
+
+curl -s &quot;https://crt.sh/?q=%25.compass.com&amp;output=json&quot; \
+  | jq -r '.[].name_value' \
+  | sed 's/\*\.//g' \
+  | sort -u &gt; recon/subs_crtsh.txt
+
+cat recon/subs_*.txt | sort -u &gt; recon/all_subs.txt
+</code></pre>
+<h3 id="step-42-gentle-live-probing-respecting-rate-scope">Step 4.2: Gentle Live Probing (Respecting Rate &amp; Scope)</h3>
+<pre><code class="language-bash"># Resolve DNS
+dnsx -l recon/all_subs.txt -silent -o recon/resolved_subs.txt
+
+# Probe gently (10 req/s) WITH the mandatory X-Bug-Bounty header
+httpx -l recon/resolved_subs.txt \
+  -H &quot;X-Bug-Bounty: HackerOne-&lt;your_username&gt;&quot; \
+  -sc -title -td -cl -location \
+  -rate-limit 10 \
+  -o recon/live_hosts.txt
+
+cut -d' ' -f1 recon/live_hosts.txt &gt; recon/live_urls.txt
+</code></pre>
+<ul>
+<li><strong>Filter Out Noise</strong>: Ignore third-party CNAMEs pointing to Squarespace, Wix, Zendesk, or Anywhere Real Estate. Focus on Compass-owned APIs, staging/dev hosts, and internal portals.</li>
+</ul>
+<h3 id="step-43-mining-compass-javascript-bundles">Step 4.3: Mining Compass JavaScript Bundles</h3>
+<p>While browsing <code>compass.com</code> as Buyer A, Burp collects all <code>.js</code> bundles. You can also extract JS URLs from passive archives:</p>
+<pre><code class="language-bash">gau --subs compass.com | grep -Ei &quot;\.js(\?|$)&quot; | sort -u &gt; js/js_files.txt
+
+# Download JS files gently and grep for internal API routes &amp; GraphQL queries
+mkdir -p js/downloaded
+xargs -a js/js_files.txt -P 3 -I {} sh -c 'curl -sL -H &quot;X-Bug-Bounty: HackerOne-&lt;your_username&gt;&quot; --max-time 10 &quot;$1&quot; -o &quot;js/downloaded/$(printf %s &quot;$1&quot; | md5sum | cut -d&quot; &quot; -f1).js&quot;' _ {}
+
+grep -Erho &quot;(/api/v[0-9]+/[a-zA-Z0-9_/{}-]+|/graphql|/gql|/internal/[a-zA-Z0-9_/-]+)&quot; js/downloaded/ | sort -u &gt; endpoints/js_routes.txt
+</code></pre>
+<ul>
+<li><strong>What to look for in <code>js_routes.txt</code></strong>:</li>
+<li>Endpoints containing <code>admin</code>, <code>agent</code>, <code>staff</code>, <code>export</code>, <code>import</code>, <code>webhook</code>, <code>upload</code>, <code>token</code>, <code>billing</code>, <code>internal</code>.</li>
+<li>Feature flags or beta routes hidden in the UI.</li>
+</ul>
+<hr />
+<h2 id="5-phase-2-consumer-feature-mapping-what-to-test-vs-skip">5. Phase 2: Consumer Feature Mapping (What to Test vs. Skip)</h2>
+<p>Browse <code>compass.com</code> as Buyer A and map each feature:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Feature</th>
+<th style="text-align: left;">Testable?</th>
+<th style="text-align: left;">What to Look For</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Account Profile &amp; Settings</strong></td>
+<td style="text-align: left;"><strong>Yes</strong></td>
+<td style="text-align: left;">IDOR on profile update, email/phone change auth bypass, Stored XSS in name/bio</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Saved Searches &amp; Alerts</strong></td>
+<td style="text-align: left;"><strong>Yes (Manual)</strong></td>
+<td style="text-align: left;">IDOR on saved search IDs, Stored XSS in saved search names, CSRF</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Collections</strong></td>
+<td style="text-align: left;"><strong>Careful</strong></td>
+<td style="text-align: left;">Remember: invited users removing users/listings or inviting without invite is <strong>expected</strong>. Test only <em>uninvited</em> / <em>non-member</em> IDOR or XSS in collection names/notes!</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Search Bar</strong></td>
+<td style="text-align: left;"><strong>Manual Only</strong></td>
+<td style="text-align: left;">Manual XSS / SQLi / GraphQL probing only—<strong>zero automation</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Work with an Agent / Support</strong></td>
+<td style="text-align: left;"><strong>NO</strong></td>
+<td style="text-align: left;"><strong>Do not test</strong>—triggers emails/tickets to real agents/staff</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Document / Image Uploads</strong></td>
+<td style="text-align: left;"><strong>Yes</strong></td>
+<td style="text-align: left;">SVG XSS, metadata/EXIF, SSRF in image URL import, path traversal in filenames</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Login / SSO / Password Reset</strong></td>
+<td style="text-align: left;"><strong>Yes</strong></td>
+<td style="text-align: left;">OAuth <code>redirect_uri</code>, <code>state</code> CSRF, reset token leakage, 2FA bypass</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-phase-3-access-control-testing-idor-bola-bfla">6. Phase 3: Access Control Testing (IDOR / BOLA / BFLA)</h2>
+<p>This is your highest-probability area on a multi-role platform (<code>Consumer</code> vs <code>Agent</code> vs <code>Staff</code>).</p>
+<h3 id="step-61-horizontal-idor-buyer-a-buyer-b">Step 6.1: Horizontal IDOR (Buyer A -&gt; Buyer B)</h3>
+<ol>
+<li>As <strong>Buyer B</strong> (Blue container), perform actions on private consumer data:
+   - View/edit account settings
+   - View/edit/delete a saved search
+   - Create a private collection (without inviting Buyer A) and add a note</li>
+<li>Send each request to <strong>Burp Repeater</strong>.</li>
+<li>Replace Buyer B's session cookie / <code>Authorization</code> token with <strong>Buyer A's</strong> token.</li>
+<li><strong>What counts as a valid bug</strong>:
+   - Buyer A can <strong>read, modify, or delete</strong> Buyer B's private saved search, private collection (when not invited), or private profile/preferences.
+   - <em>(Remember: <code>personIDs</code> themselves are not secret—you must prove unauthorized access to private data or state-changing actions!)</em></li>
+</ol>
+<h3 id="step-62-vertical-privilege-escalation-consumer-agent-staff-bfla">Step 6.2: Vertical Privilege Escalation (Consumer -&gt; Agent / Staff BFLA)</h3>
+<p>Using the hidden endpoints you found in <code>endpoints/js_routes.txt</code>:
+1. Send a request to an Agent-only or Staff-only endpoint (e.g., <code>/api/v1/agent/...</code> or <code>/api/v1/staff/...</code>) using <strong>Buyer A's</strong> token.
+2. If you get <code>403 Forbidden</code>, test BFLA bypasses:
+   - <strong>Method swap</strong>: <code>GET</code> -&gt; <code>POST</code>, <code>PUT</code>, <code>PATCH</code>, or add <code>X-HTTP-Method-Override: GET</code>.
+   - <strong>Path normalization</strong>: <code>/api/v1/agent/stats/</code> or <code>/api/v1/agent/stats;.json</code> or <code>/api/v1/./agent/stats</code>.
+   - <strong>Parameter pollution</strong>: <code>?role=consumer&amp;role=agent</code> or JSON <code>{"accountType": "agent"}</code> during profile update (Mass Assignment).</p>
+<blockquote>
+<p><strong>Safety Rule</strong>: If a Staff/Admin endpoint returns real customer or agent PII, <strong>stop immediately</strong>, take a single redacted screenshot of the response structure, and report it without enumerating further records.</p>
+</blockquote>
+<hr />
+<h2 id="7-phase-4-authentication-sessions-jwt-oauth">7. Phase 4: Authentication, Sessions, JWT &amp; OAuth</h2>
+<h3 id="step-71-session-token-lifecycle">Step 7.1: Session &amp; Token Lifecycle</h3>
+<ul>
+<li><strong>Session Invalidation</strong>: Log out of Buyer A, then replay an authenticated request in Burp Repeater. Does the old session cookie/JWT still work?</li>
+<li><strong>Password Change</strong>: Change Buyer A's password in Container 1—does Container 2's active session get invalidated?</li>
+<li><strong>JWT Auditing</strong> (if Compass APIs use JWTs):
+  <code>bash
+  # Inspect claims and test alg:none / signature stripping safely
+  python3 jwt_tool.py "&lt;BUYER_A_JWT&gt;" -M at</code></li>
+</ul>
+<h3 id="step-72-oauth-sso-testing">Step 7.2: OAuth / SSO Testing</h3>
+<p>During "Continue with Google / Apple" login:
+1. Intercept <code>/oauth/authorize</code> in Burp.
+2. Test <code>redirect_uri</code> validation:
+   <code>text
+   https://www.compass.com.evil.com/callback
+   https://www.compass.com@evil.com/callback
+   https://www.compass.com/callback/../../logout?next=https://evil.com</code>
+3. Test <strong>Login CSRF</strong>: Drop the <code>state</code> parameter—if the callback still succeeds, an attacker could bind their OAuth account to a victim's Compass account.</p>
+<h3 id="step-73-password-reset-flow">Step 7.3: Password Reset Flow</h3>
+<ul>
+<li>Intercept <code>POST</code> to the forgot-password endpoint and test:</li>
+<li><code>X-Forwarded-Host: evil.com</code> (Password Reset Poisoning).</li>
+<li>HTTP Parameter Pollution: <code>email=buyerA@wearehackerone.com&amp;email=buyerB@wearehackerone.com</code>.</li>
+</ul>
+<hr />
+<h2 id="8-phase-5-server-side-injection-testing-manual-safe">8. Phase 5: Server-Side &amp; Injection Testing (Manual &amp; Safe)</h2>
+<h3 id="step-81-manual-sql-injection-non-search-endpoints">Step 8.1: Manual SQL Injection (Non-Search Endpoints)</h3>
+<p>Test JSON fields, <code>sort=</code>, <code>order=</code>, and filter parameters on REST/GraphQL endpoints <strong>manually</strong> in Burp Repeater:</p>
+<pre><code class="language-sql">'
+&quot;
+' AND 1=1-- -
+' AND 1=2-- -
+(CASE WHEN (1=1) THEN id ELSE created_at END)
+</code></pre>
+<ul>
+<li>Look for <code>500 Internal Server Error</code>, stack traces, or boolean response differences. Never use automated <code>sqlmap</code> on search or high-volume endpoints.</li>
+</ul>
+<h3 id="step-82-ssrf-image-import-webhooks-pdfshare-previews">Step 8.2: SSRF (Image Import, Webhooks, PDF/Share Previews)</h3>
+<ol>
+<li>Start an OOB listener:
+   <code>bash
+   interactsh-client</code></li>
+<li>Wherever Compass accepts an external URL (avatar URL, link preview, document/PDF export), submit <code>http://&lt;your-id&gt;.oast.fun</code>.</li>
+<li>If you receive a callback, test if internal/metadata IPs are reachable using safe bypasses (<code>http://[::ffff:127.0.0.1]/</code>, <code>http://2130706433/</code>, <code>http://localtest.me/</code>, or a <code>302</code> redirect).</li>
+</ol>
+<h3 id="step-83-ssti-path-traversal">Step 8.3: SSTI &amp; Path Traversal</h3>
+<ul>
+<li><strong>SSTI</strong>: Test custom names, collection titles, or export templates with <code>{{7*7}}</code> and <code>${7*7}</code> (look for <code>49</code> in exported PDFs or emails).</li>
+<li><strong>Path Traversal</strong>: Test any <code>?file=</code>, <code>?path=</code>, or <code>?template=</code> parameter with <code>../../../../etc/hostname</code> and <code>..%2f..%2f..%2fetc%2fhostname</code>.</li>
+</ul>
+<hr />
+<h2 id="9-phase-6-client-side-modern-browser-attacks">9. Phase 6: Client-Side &amp; Modern Browser Attacks</h2>
+<h3 id="step-91-context-aware-xss">Step 9.1: Context-Aware XSS</h3>
+<p>Test every user-controlled string that renders back in the browser (Buyer A's display name, collection title, saved search name, URL parameters):
+1. Inject canary <code>xss991"'&gt;&lt;</code> and inspect the DOM in Firefox DevTools.
+2. Pick the matching payload:
+   - HTML body: <code>&lt;img src=x onerror=alert(document.domain)&gt;</code>
+   - Attribute: <code>" autofocus onfocus=alert(document.domain) x="</code>
+   - JS string: <code>';alert(document.domain);//</code>
+   - Link/Markdown: <code>javascript:alert(document.domain)</code></p>
+<h3 id="step-92-cors-misconfigurations">Step 9.2: CORS Misconfigurations</h3>
+<p>On authenticated API endpoints (e.g., <code>/api/v1/me</code> or user preferences), send:</p>
+<pre><code class="language-http">Origin: https://evil.com
+</code></pre>
+<p>Also test <code>Origin: https://compass.com.evil.com</code>, <code>Origin: https://attackercompass.com</code>, and <code>Origin: null</code>. If the response returns <code>Access-Control-Allow-Origin: https://evil.com</code> <strong>and</strong> <code>Access-Control-Allow-Credentials: true</code>, you can read authenticated user data cross-origin.</p>
+<h3 id="step-93-modern-client-side-checks">Step 9.3: Modern Client-Side Checks</h3>
+<ul>
+<li><strong><code>postMessage</code> DOM-XSS</strong>: Search downloaded JS files (<code>js/downloaded/</code>) for <code>addEventListener("message"</code>. Check if <code>event.origin</code> is strictly validated before <code>event.data</code> is used.</li>
+<li><strong>Client-Side Path Traversal (CSPT)</strong>: Check if frontend <code>fetch()</code> calls concatenate URL params directly without <code>encodeURIComponent()</code>.</li>
+<li><strong>Prototype Pollution</strong>: Test <code>?__proto__[polluted]=1</code> in URLs and check <code>Object.prototype.polluted</code> in Firefox Console.</li>
+</ul>
+<hr />
+<h2 id="10-phase-7-apis-graphql-file-uploads-races-cache">10. Phase 7: APIs, GraphQL, File Uploads, Races &amp; Cache</h2>
+<h3 id="step-101-graphql-testing">Step 10.1: GraphQL Testing</h3>
+<p>If Compass exposes a <code>/graphql</code> endpoint:
+1. Check if introspection is enabled: <code>{"query":"{__schema{types{name,fields{name}}}}"}</code>.
+2. If disabled, test field suggestions (<code>{"query":"{ user { pass } }"}</code>) to map hidden fields.
+3. Test <strong>object-level authorization</strong> on every query/mutation (can Buyer A query Buyer B's private node ID?).</p>
+<h3 id="step-102-file-uploads-profile-document-uploads">Step 10.2: File Uploads (Profile / Document Uploads)</h3>
+<ul>
+<li>Test uploading an <code>.svg</code> containing <code>&lt;svg xmlns="http://www.w3.org/2000/svg" onload="alert(document.domain)"/&gt;</code>—check if it renders inline on <code>compass.com</code> (Stored XSS) rather than forcing <code>Content-Disposition: attachment</code> on a sandboxed domain.</li>
+<li>Test path traversal in <code>filename="../test.txt"</code> during multipart upload.</li>
+</ul>
+<h3 id="step-103-race-conditions-burp-single-packet-attack">Step 10.3: Race Conditions (Burp Single-Packet Attack)</h3>
+<p>Test one-time actions (invites, likes/saves, promo/referral redemptions, or token generation) by grouping 15–20 identical requests in Burp Repeater and clicking <strong>Send group in parallel (single-packet attack)</strong>.</p>
+<h3 id="step-104-cache-poisoning-with-cache-buster-only">Step 10.4: Cache Poisoning (With Cache-Buster Only!)</h3>
+<p>Always append a unique query parameter (<code>?cb=918273</code>) so you <strong>never</strong> affect real Compass users:</p>
+<pre><code class="language-http">GET /?cb=918273 HTTP/1.1
+Host: www.compass.com
+X-Forwarded-Host: evil.com
+</code></pre>
+<hr />
+<h2 id="11-phase-8-verification-impact-compass-report-template">11. Phase 8: Verification, Impact &amp; Compass Report Template</h2>
+<h3 id="before-clicking-submit">Before Clicking "Submit"</h3>
+<ol>
+<li><strong>Verify against Exclusions</strong>: Confirm it is <em>not</em> <code>personIDs</code>, Agent public PII, expected Collections permissions, Squarespace/Wix, or a search-box automation finding.</li>
+<li><strong>Confirm Header &amp; Clean PoC</strong>: Include the <code>X-Bug-Bounty: HackerOne-&lt;username&gt;</code> header you used and provide exact <code>curl</code> / HTTP steps between Buyer A and Buyer B.</li>
+<li><strong>Patience on Triage</strong>: Compass peer-reviews Medium/Low weekly (and High/Critical immediately).</li>
+</ol>
+<h3 id="compass-ready-report-template">Compass-Ready Report Template</h3>
+<pre><code class="language-markdown">## Title
+[Vulnerability Type] on [Endpoint] allows [Consumer/Unauthenticated] user to [Impact]
+
+## Summary
+A brief 2–3 sentence summary of the root cause, affected Compass endpoint, and security impact.
+
+## Severity
+CVSS v3.1: [Score] ([Vector])
+
+## Test Accounts &amp; Header Used
+- Buyer A: `&lt;username&gt;+buyerA@wearehackerone.com`
+- Buyer B: `&lt;username&gt;+buyerB@wearehackerone.com`
+- Custom Header: `X-Bug-Bounty: HackerOne-&lt;username&gt;`
+
+## Steps to Reproduce
+1. Authenticate as **Buyer B** and create/access `[private resource]`.
+2. Authenticate as **Buyer A** and send the following request:
+   ```http
+   GET /api/v1/example/&lt;BUYER_B_RESOURCE_ID&gt; HTTP/1.1
+   Host: www.compass.com
+   X-Bug-Bounty: HackerOne-&lt;username&gt;
+   Cookie: &lt;BUYER_A_SESSION&gt;
+   ```
+3. Observe HTTP `200 OK` returning Buyer B's private data.
+
+## Proof of Concept (PoC)
+Attach redacted screenshot / `curl` command.
+
+## Impact
+Explain the realistic business impact (e.g., any Buyer/Seller account can read or modify another user's private data).
+
+## Remediation
+Enforce server-side ownership checks (`resource.owner_id == current_user.id`) before returning or modifying the resource.
+</code></pre>
+    </main>
+  </div>
+  <script>
+    document.querySelectorAll("pre").forEach((pre) => {
+      const btn = document.createElement("button");
+      btn.className = "copy-btn";
+      btn.textContent = "Copy";
+      btn.addEventListener("click", async () => {
+        const code = pre.querySelector("code")?.innerText || pre.innerText;
+        await navigator.clipboard.writeText(code);
+        btn.textContent = "Copied!";
+        setTimeout(() => (btn.textContent = "Copy"), 1500);
+      });
+      pre.appendChild(btn);
+    });
+  </script>
+</body>
+</html>

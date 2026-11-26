@@ -1,0 +1,10 @@
+Nov 24 00:01:05 server sshd[10214]: Accepted publickey for zahid from 10.0.0.15 port 54322 ssh2: RSA SHA256:abc12345
+Nov 24 00:01:10 server sudo:    zahid : TTY=pts/0 ; PWD=/home/zahid ; USER=root ; COMMAND=/bin/systemctl status nginx
+Nov 24 00:02:15 server sshd[10220]: Failed password for invalid user admin from 185.220.101.5 port 41234 ssh2
+Nov 24 00:02:18 server sshd[10221]: Failed password for invalid user root from 185.220.101.5 port 41236 ssh2
+Nov 24 00:02:21 server sshd[10222]: Failed password for invalid user test from 185.220.101.5 port 41238 ssh2
+Nov 24 00:02:25 server sshd[10223]: Failed password for invalid user support from 185.220.101.5 port 41240 ssh2
+Nov 24 00:02:29 server sshd[10224]: Failed password for invalid user oracle from 185.220.101.5 port 41242 ssh2
+Nov 24 00:03:01 server CRON[10230]: (root) CMD (/usr/local/bin/backup_audit.sh > /dev/null 2>&1)
+Nov 24 00:03:45 server sshd[10235]: Failed password for invalid user deploy from 198.51.100.99 port 59901 ssh2
+Nov 24 00:03:50 server sshd[10236]: Failed password for invalid user deploy from 198.51.100.99 port 59903 ssh2
