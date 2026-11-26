@@ -43,8 +43,6 @@ Python 3.10+ and guided by *Python Scripting for Cybersecurity Professionals*.
 #### Documentation (`docs/`)
 - `MASTER_SECURITY_ENGINEERING_GUIDE.html` / `.md` — 12-module dark-theme engineering reference
 - `ARCHITECTURE_AND_STUDY_GUIDE.html` / `.md` — Architecture overview with Mermaid diagrams
-- `WEB_BUG_BOUNTY_PENTEST_GUIDE.html` / `.md` — Web bug bounty and pentesting methodology guide
-- `COMPASS_BUG_BOUNTY_PLAYBOOK.html` / `.md` — Compass bug bounty playbook
 
 #### Examples (`examples/`)
 - `full_pipeline_demo.py` — End-to-end pipeline: log streaming → IOC extraction →

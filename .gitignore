@@ -61,3 +61,7 @@ output/*.md
 # Local launcher & reference PDF
 jeemza.sh
 Python_Scripting_for_Cybersecurity_Professionals_Complete_Guide.pdf
+
+# Unrelated bug bounty docs (kept local, excluded from SecToolKit repo)
+docs/COMPASS_BUG_BOUNTY_PLAYBOOK.*
+docs/WEB_BUG_BOUNTY_PENTEST_GUIDE.*

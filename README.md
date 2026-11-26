@@ -7,7 +7,7 @@ A modular, production-grade security engineering and automation toolkit built fo
 - `tests/`: Automated test suite (`unittest`).
 - `data/`: Sanitized sample logs and test fixtures.
 - `output/`: Generated reports, manifests, and database artifacts.
-- `docs/`: Master security engineering documentation, architecture guides, and bug bounty playbooks (`MASTER_SECURITY_ENGINEERING_GUIDE`, `ARCHITECTURE_AND_STUDY_GUIDE`, `WEB_BUG_BOUNTY_PENTEST_GUIDE`, `COMPASS_BUG_BOUNTY_PLAYBOOK`).
+- `docs/`: Master security engineering documentation and dark-theme guides (`MASTER_SECURITY_ENGINEERING_GUIDE`, `ARCHITECTURE_AND_STUDY_GUIDE`).
 
 ## Completed Modules
 
